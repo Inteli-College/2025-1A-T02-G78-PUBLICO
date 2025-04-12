@@ -1,6 +1,3 @@
-
-# Relatório Público – Progresso do Módulo 1
-
 ## Public report – module 1 summary
 
 ### Objective
