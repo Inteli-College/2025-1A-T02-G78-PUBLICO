@@ -22,14 +22,68 @@ Independent professionals and micro‑business owners routinely lose opportuniti
 | **Automation** | Daily summaries, smart reply suggestions, cron‑driven digests | 🟡 |
 
 ---  
-## 4. Technology & architecture (colocar mais aqui)
+## 4. Technology & architecture
 
-Key choices  
-- **Micro‑services** per connector (Docker‑compose for local dev).  
-- **Qdrant** for fast similarity search across messages.  
-- **Redis** queues decouple ingestion from processing.  
+#### 1. Email service
+- Scheduled job that monitors IMAP every 2 minutes
+- Basic classification via NLP model with semantic search
+- Dual storage: PostgreSQL (structured data) + Qdrant (semantic search)
+- Incremental tracking via UIDs to avoid reprocessing
+
+#### 2. WhatsApp integration
+- Evolution API as middleware for WhatsApp Business
+- Real-time webhook + Redis Streams for asynchronous processing
+- Flow: WhatsApp → Evolution API → Webhook → Redis Streams → Qdrant
+- Consumer groups for distributed processing and fault tolerance
+
+#### 3. Vector search system (Qdrant)
+- Vector database for semantic similarity search
+- SentenceTransformers 'all-MiniLM-L6-v2' for embeddings (384 dimensions)
+- Unifies search between emails and messages WhatsApp
+- Consumer groups for parallel processing
+
+### Backend and APIs
+- **Python 3.11+** with **FastAPI** for REST APIs
+- **SQLAlchemy** for ORM with PostgreSQL
+- **SentenceTransformers** for generating NLP embeddings
+
+### Node.js
+- **Evolution API** (TypeScript) for WhatsApp Business integration
+
+### Data infrastructure
+- **PostgreSQL 15**: Structured data
+- **Redis 6.2**: Cache and message broker (Streams)
+- **Qdrant**: Vector database for semantic search
+
+### Orchestration
+- **Docker Compose** with network host mode
+- `run.sh` script for coordinated service startup
+
+## Data streams
+### Email processing
+```
+IMAP → Basic Classification → PostgreSQL + Qdrant (embeddings)
+```
+
+### WhatsApp processing
+```
+Evolution API → Webhook → Redis Streams → Qdrant (embeddings)
+```
+
+### Semantic search
+```
+Query → Vectorization → Qdrant → Results by Similarity
+```
+
+## Implemented patterns
+
+- **Event-Driven Architecture**: Redis Streams for asynchronous processing
+- **Database Per Service**: PostgreSQL (email), Redis (WhatsApp), Qdrant (search)
+- **Consumer Groups**: Distributed processing with exactly-once delivery
+- **API-First**: FastAPI with automatic Swagger documentation
 
 ---  
+
 ## 5. Sprints highlights  
 
 | Sprint | Key deliverables |
@@ -47,14 +101,5 @@ Key choices
 1. **POC testing** – finish WhatsApp and Gmail connections + LLM, onboard early adopters.  
 2. **Dashboard v1** – KPI widgets (lead funnel, response SLA).  
 3. **Implementing other connectors** – expand TAM and multi‑channel view.  
-4. **Paid tier ** – subscription billing, advanced automations, calendar management.  
-5. + Other features priorization coming from POC results.  
-
----  
-## 7. Risks & mitigations (sugestão do gpt, ver se faz sentido)
-
-| Risk | Mitigation |
-|------|------------|
-| Third‑party API policy changes | Maintain abstraction layer, diversify channels. |
-| LLM cost spikes | Cache embeddings, fine‑tune smaller models where viable. |
-| Data privacy (PII) | End‑to‑end encryption at rest & transit, GDPR‑aligned policies. |
+4. **Paid tier** – subscription billing, advanced automations, calendar management.  
+5. Plus: other features priorization coming from POC results.  
